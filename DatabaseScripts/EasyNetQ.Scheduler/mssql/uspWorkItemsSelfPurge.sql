@@ -16,17 +16,14 @@ GO
 CREATE Procedure [dbo].[uspWorkItemsSelfPurge] @rows SmallINT = 5, @purgeDate DateTime = NULL 
 
 AS
-
--- Only execute if there is work to do and continue 
--- until all records with a PurgeDate <= now are deleted
-WHILE EXISTS(SELECT * FROM WorkItemStatus WHERE PurgeDate <= @purgeDate) 
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED
 BEGIN
       -- NB:  the FK in WorkItemStatus has ON DELETE CASCADE,
       -- so it will delete corresponding rows automatically
-      DELETE TOP (@rows) WorkItems
+      DELETE WorkItems
       FROM WorkItems wi
       INNER JOIN WorkItemStatus ws
       ON wi.WorkItemID = ws.WorkItemID
-      WHERE ws.PurgeDate <= @purgeDate
-END -- WHILE EXISTS()
+      WHERE ws.PurgeDate < @purgeDate
+END
 

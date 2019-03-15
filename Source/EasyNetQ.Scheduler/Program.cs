@@ -17,9 +17,15 @@ namespace EasyNetQ.Scheduler
                     serviceRecoveryConfiguration.SetResetPeriod( days: 0 ); // Reset failure count after every failure
                 } );
                 hostConfiguration.RunAsLocalSystem();
-                hostConfiguration.SetDescription("EasyNetQ.Scheduler");
-                hostConfiguration.SetDisplayName("EasyNetQ.Scheduler");
-                hostConfiguration.SetServiceName("EasyNetQ.Scheduler");
+
+                var config = ScheduleRepositoryConfiguration.FromConfigFile();
+                var instance = config.InstanceName;
+                if (string.IsNullOrWhiteSpace(instance))
+                    instance = "Default";
+
+                hostConfiguration.SetDescription($"EasyNetQ.Scheduler.{instance}");
+                hostConfiguration.SetDisplayName($"EasyNetQ.Scheduler.{instance}");
+                hostConfiguration.SetServiceName($"EasyNetQ.Scheduler.{instance}");
 
                 hostConfiguration.Service<ISchedulerService>(serviceConfiguration =>
                 {

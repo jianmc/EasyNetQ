@@ -39,7 +39,7 @@ namespace EasyNetQ.Scheduler
                 AddParameter(command, dialect.WakeTimeParameterName, scheduleMe.WakeTime, DbType.DateTime);
                 AddParameter(command, dialect.BindingKeyParameterName, scheduleMe.BindingKey, DbType.String);
                 AddParameter(command, dialect.CancellationKeyParameterName, scheduleMe.CancellationKey, DbType.String);
-                AddParameter(command, dialect.MessageParameterName, scheduleMe.InnerMessage, DbType.Binary);
+                AddParameter(command, dialect.MessageParameterName, System.Text.Encoding.UTF8.GetString(scheduleMe.InnerMessage), DbType.String);
                 AddParameter(command, dialect.ExchangeParameterName, scheduleMe.Exchange, DbType.String);
                 AddParameter(command, dialect.ExchangeTypeParameterName, scheduleMe.ExchangeType, DbType.String);
                 AddParameter(command, dialect.RoutingKeyParameterName, scheduleMe.RoutingKey, DbType.String);
@@ -89,7 +89,7 @@ namespace EasyNetQ.Scheduler
                         {
                             WakeTime = (DateTime) reader["WakeTime"],
                             BindingKey = reader["BindingKey"].ToString(),
-                            InnerMessage = (byte[])reader["InnerMessage"],
+                            InnerMessage = System.Text.Encoding.UTF8.GetBytes(reader["InnerMessage"].ToString()),
                             CancellationKey = reader["CancellationKey"].ToString(),
                             Exchange = reader["Exchange"].ToString(),
                             ExchangeType = reader["ExchangeType"].ToString(),

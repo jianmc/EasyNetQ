@@ -3,6 +3,9 @@
   <PropertyGroup>
     <Description>EasyNetQ.Scheduler</Description>
     <TargetFramework>net451</TargetFramework>
+    <ApplicationIcon />
+    <OutputType>Exe</OutputType>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <None Update="log4net.config">

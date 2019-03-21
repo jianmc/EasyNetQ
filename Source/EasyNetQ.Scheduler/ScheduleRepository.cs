@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Reflection;
 using System.Threading;
 using EasyNetQ.SystemMessages;
 using log4net;
@@ -180,13 +181,108 @@ namespace EasyNetQ.Scheduler
 
         private IDbConnection GetConnection()
         {
-            var factory = DbProviderFactories.GetFactory(configuration.ProviderName);
+            var factory = GetDbProviderFactory(configuration.ProviderName);
             var connection = factory.CreateConnection();
             connection.ConnectionString = configuration.ConnectionString;
             connection.Open();
             return connection;
         }
 
+        /// <summary>
+        /// Retrieves a value from  a static property by specifying a type full name and property
+        /// </summary>
+        /// <param name="typeName">Full type name (namespace.class)</param>
+        /// <param name="property">Property to get value from</param>
+        /// <returns></returns>
+        public static object GetStaticProperty(string typeName, string property)
+        {
+            Type type = GetTypeFromName(typeName);
+            if (type == null)
+                return null;
+
+            return GetStaticProperty(type, property);
+        }
+
+        /// <summary>
+        /// Helper routine that looks up a type name and tries to retrieve the
+        /// full type reference using GetType() and if not found looking 
+        /// in the actively executing assemblies and optionally loading
+        /// the specified assembly name.
+        /// </summary>
+        /// <param name="typeName">type to load</param>
+        /// <param name="assemblyName">
+        /// Optional assembly name to load from if type cannot be loaded initially. 
+        /// Use for lazy loading of assemblies without taking a type dependency.
+        /// </param>
+        /// <returns>null</returns>
+        public static Type GetTypeFromName(string typeName, string assemblyName = null)
+        {
+            var type = Type.GetType(typeName, false);
+            if (type != null)
+                return type;
+
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            // try to find manually
+            foreach (Assembly asm in assemblies)
+            {
+                type = asm.GetType(typeName, false);
+
+                if (type != null)
+                    break;
+            }
+            if (type != null)
+                return type;
+
+            // see if we can load the assembly
+            if (!string.IsNullOrEmpty(assemblyName))
+            {
+                var a = Assembly.Load(assemblyName);
+                if (a != null)
+                {
+                    type = Type.GetType(typeName, false);
+                    if (type != null)
+                        return type;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns a static property from a given type
+        /// </summary>
+        /// <param name="type">Type instance for the static property</param>
+        /// <param name="property">Property name as a string</param>
+        /// <returns></returns>
+        public static object GetStaticProperty(Type type, string property)
+        {
+            object result = null;
+            try
+            {
+                result = type.InvokeMember(property, BindingFlags.Static | BindingFlags.Public | BindingFlags.GetField | BindingFlags.GetProperty, null, type, null);
+            }
+            catch
+            {
+                return null;
+            }
+
+            return result;
+        }
+        public static DbProviderFactory GetDbProviderFactory(string dbProviderFactoryTypename, string assemblyName = null)
+        {
+            var instance = GetStaticProperty(dbProviderFactoryTypename, "Instance");
+            if (instance == null)
+            {
+                var a = Assembly.Load(assemblyName);
+                if (a != null)
+                    instance = GetStaticProperty(dbProviderFactoryTypename, "Instance");
+            }
+
+            if (instance == null)
+                throw new InvalidOperationException(dbProviderFactoryTypename); // string.Format(Resources.UnableToRetrieveDbProviderFactoryForm, dbProviderFactoryTypename));
+
+            return instance as DbProviderFactory;
+        }
         private IDbCommand CreateCommand(IDbConnection connection, string commandText)
         {
             var command = connection.CreateCommand();
@@ -212,4 +308,5 @@ namespace EasyNetQ.Scheduler
             return parameter;
         }
     }
+
 }

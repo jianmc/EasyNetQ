@@ -1,0 +1,26 @@
+FROM mcr.microsoft.com/dotnet/core/sdk AS build
+
+RUN apt-get update && \
+apt-get install -y libgit2-dev && \
+ln -s /usr/lib/x86_64-linux-gnu/libgit2.so /lib/x86_64-linux-gnu/libgit2-15e1193.so
+
+WORKDIR /app
+
+ADD ./.git ./.git
+ADD ./Source/EasyNetQ/EasyNetQ.csproj ./EasyNetQ/EasyNetQ.csproj
+ADD ./Source/EasyNetQ.Scheduler/EasyNetQ.Scheduler.csproj ./EasyNetQ.Scheduler/EasyNetQ.Scheduler.csproj
+
+RUN dotnet restore ./EasyNetQ.Scheduler/EasyNetQ.Scheduler.csproj
+
+COPY ./Source/build.props ./build.props
+COPY ./Source/build.targets ./build.targets
+COPY ./Source/EasyNetQ ./EasyNetQ
+COPY ./Source/EasyNetQ.Scheduler ./EasyNetQ.Scheduler
+
+RUN dotnet publish -c Release -o out ./EasyNetQ.Scheduler/EasyNetQ.Scheduler.csproj
+
+FROM mcr.microsoft.com/dotnet/core/runtime AS runtime
+WORKDIR /app
+COPY --from=build /app/EasyNetQ.Scheduler/out .
+
+ENTRYPOINT ["dotnet", "EasyNetQ.Scheduler.dll"]

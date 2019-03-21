@@ -1,5 +1,9 @@
-﻿using log4net.Config;
+﻿using System.Reflection;
+using log4net;
+using log4net.Config;
+#if !NETCOREAPP
 using Topshelf;
+#endif
 
 namespace EasyNetQ.Scheduler
 {
@@ -7,8 +11,9 @@ namespace EasyNetQ.Scheduler
     {
         static void Main()
         {
-            XmlConfigurator.Configure();
-
+            var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+            XmlConfigurator.Configure(logRepository);
+#if !NETCOREAPP
             HostFactory.Run(hostConfiguration =>
             {
                 hostConfiguration.EnableServiceRecovery( serviceRecoveryConfiguration =>
@@ -43,6 +48,16 @@ namespace EasyNetQ.Scheduler
                     });
                 });
             });
+#else
+            var config = ScheduleRepositoryConfiguration.FromConfigFile();
+            var instance = config.InstanceName;
+            if (string.IsNullOrWhiteSpace(instance))
+                instance = "Default";
+
+            var scheduler = SchedulerServiceFactory.CreateScheduler();
+
+            scheduler.Start();
+#endif
         }
     }
 }

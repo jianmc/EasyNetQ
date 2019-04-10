@@ -1,76 +1,39 @@
+USE [EasyNetQ.Scheduler]
+GO
+
+/****** Object:  Table [dbo].[WorkItems]    Script Date: 2019-03-21 11:21:36 AM ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE TABLE [dbo].[WorkItems] (
-    [WorkItemID]		INT IDENTITY (1, 1) NOT NULL,
-    [BindingKey]		NVARCHAR (1000) NOT NULL,
-    [CancellationKey]   NVARCHAR (255) NULL,
-    [InnerMessage]		VARBINARY(MAX) NOT NULL,
-    [TextData]			NVARCHAR (MAX)  NULL,
-	[InstanceName]		NVARCHAR (100) NOT NULL default(''),
-	[Exchange]			NVARCHAR (256) NULL,
-	[ExchangeType]		NVARCHAR (16) NULL,
-	[RoutingKey]		NVARCHAR (256) NULL,
-	[MessageProperties] NVARCHAR (max) NULL
-);
-
+SET ANSI_PADDING ON
 GO
 
-ALTER TABLE [dbo].[WorkItems]
-    ADD CONSTRAINT [PK_WorkItems] PRIMARY KEY CLUSTERED ([WorkItemID] ASC) WITH (ALLOW_PAGE_LOCKS = ON, ALLOW_ROW_LOCKS = ON, PAD_INDEX = OFF, IGNORE_DUP_KEY = OFF, STATISTICS_NORECOMPUTE = OFF);
-
-GO
-
-CREATE TABLE [dbo].[WorkItemStatus] (
-	[WorkItemID]  [int] NOT NULL,
-	[Status] [smallint] NULL,
-	[WakeTime] [datetime] NULL,
-	[ClientID] [tinyint] NULL,
-	[PurgeDate] [smalldatetime] NULL
-);
-
-GO
-
-ALTER TABLE [dbo].[WorkItemStatus]
-    ADD CONSTRAINT [PK_WorkItemStatus] PRIMARY KEY CLUSTERED ([WorkItemID] ASC) WITH (ALLOW_PAGE_LOCKS = ON, ALLOW_ROW_LOCKS = ON, PAD_INDEX = OFF, IGNORE_DUP_KEY = OFF, STATISTICS_NORECOMPUTE = OFF);
-
-GO
-
-CREATE NONCLUSTERED INDEX [IX_workItems_cancellationKey] 
-ON [dbo].[WorkItems] 
-	([InstanceName], [CancellationKey] ASC)
-WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
-
-CREATE NONCLUSTERED INDEX [IX_workItems_instanceName] 
-ON [dbo].[WorkItems] 
-	([InstanceName], [WorkItemID] ASC)
-WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
-
-CREATE NONCLUSTERED INDEX [IX_workItemStatus_purgeDate] 
-ON [dbo].[WorkItemStatus] 
-	([PurgeDate] ASC)
-WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
-
-GO
-
-CREATE NONCLUSTERED INDEX [IX_workItemStatus_status_wakeTime] 
-ON [dbo].[WorkItemStatus] 
+CREATE TABLE [dbo].[WorkItems](
+	[WorkItemID] [int] IDENTITY(1,1) NOT NULL,
+	[BindingKey] [nvarchar](1000) NOT NULL,
+	[CancellationKey] [nvarchar](255) NULL,
+	[InnerMessage] nvarchar(max) NOT NULL,
+	[TextData] [nvarchar](max) NULL,
+	[InstanceName] [nvarchar](100) NOT NULL,
+	[Exchange] [nvarchar](256) NULL,
+	[ExchangeType] [nvarchar](16) NULL,
+	[RoutingKey] [nvarchar](256) NULL,
+	[MessageProperties] [nvarchar](max) NULL,
+ CONSTRAINT [PK_WorkItems] PRIMARY KEY CLUSTERED 
 (
-	[Status] ASC,
-	[WakeTime] ASC
-)
-WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON);
+	[WorkItemID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
 
-ALTER TABLE [dbo].[WorkItemStatus]  WITH CHECK ADD  CONSTRAINT [FK_WorkItemStatus_WorkItems] FOREIGN KEY([WorkItemID])
-REFERENCES [dbo].[WorkItems] ([WorkItemID])
-ON DELETE CASCADE
-
+SET ANSI_PADDING OFF
 GO
 
-ALTER TABLE [dbo].[WorkItemStatus] CHECK CONSTRAINT [FK_WorkItemStatus_WorkItems]
-
+ALTER TABLE [dbo].[WorkItems] ADD  DEFAULT ('') FOR [InstanceName]
 GO
+
+
